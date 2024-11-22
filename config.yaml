@@ -16,4 +16,20 @@ options:
   eufy_security_ws_port: 3000
 schema:
   eufy_security_ws_port: port
-ports: { "63336/tcp": 63336, "63337/tcp": 63337, "63338/tcp": 63338 }
+ports: {
+  "Camera-1-video": 63336,
+  "Camera-1-audio": 63337,
+  "Camera-1-backchannel": 63338,
+  "Camera-2-video": 63339,
+  "Camera-2-audio": 63340,
+  "Camera-2-backchannel": 63341,
+  "Camera-3-video": 63342,
+  "Camera-3-audio": 63343,
+  "Camera-3-backchannel": 63344,
+  "Camera-4-video": 63345,
+  "Camera-4-audio": 63346,
+  "Camera-4-backchannel": 63347,
+  "Camera-5-video": 63348,
+  "Camera-5-audio": 63349,
+  "Camera-5-backchannel": 63350,
+}
