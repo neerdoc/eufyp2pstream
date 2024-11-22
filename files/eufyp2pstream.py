@@ -1,3 +1,4 @@
+
 import asyncio
 import socket
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -12,10 +13,12 @@ RECV_CHUNK_SIZE = 4096
 # Camera Stream Handler
 class CameraStreamHandler:
     def __init__(self, serial_number, start_port):
+        print(f" - CameraStreamHandler - __init__ - serial_number: {serial_number} - start_port: {start_port}")
         self.serial_number = serial_number
         self.start_port = start_port
         self.video_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.audio_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.backchannel_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.start_livestream_msg = {
             "messageId": "start_livestream",
             "command": "device.start_livestream",
@@ -30,8 +33,10 @@ class CameraStreamHandler:
     def setup_sockets(self):
         self.video_sock.bind(("0.0.0.0", self.start_port))
         self.audio_sock.bind(("0.0.0.0", self.start_port + 1))
+        self.backchannel_sock.bind(("0.0.0.0", self.start_port + 2))
         self.video_sock.listen(1)
         self.audio_sock.listen(1)
+        self.backchannel_sock.listen(1)
 
     def start_stream(self, websocket):
         asyncio.run(self._start_stream_async(websocket))
