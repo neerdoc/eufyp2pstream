@@ -5,7 +5,7 @@ url: http://192.168.178.252:8123/local_eufyp2pstream
 arch: [amd64, aarch64, i386, armv7]
 
 # https://developers.home-assistant.io/docs/add-ons/configuration
-version: 0.2.1-beta
+version: 0.2.2-beta
 slug: eufyp2pstream
 init: false
 startup: application
@@ -16,4 +16,37 @@ options:
   eufy_security_ws_port: 3000
 schema:
   eufy_security_ws_port: port
-ports: { "63336/tcp": 63336, "63337/tcp": 63337, "63338/tcp": 63338 }
+ports: {
+  "63336/tcp": 63336,
+  "63337/tcp": 63337,
+  "63338/tcp": 63338,
+  "63339/tcp": 63339,
+  "63340/tcp": 63340,
+  "63341/tcp": 63341,
+  "63342/tcp": 63342,
+  "63343/tcp": 63343,
+  "63344/tcp": 63344,
+  "63345/tcp": 63345,
+  "63346/tcp": 63346,
+  "63347/tcp": 63347,
+  "63348/tcp": 63348,
+  "63349/tcp": 63349,
+  "63350/tcp": 63350
+}
+ports_description: {
+  "63336/tcp": "Camera-1 Video Stream",
+  "63337/tcp": "Camera-1 Audio Stream",
+  "63338/tcp": "Camera-1 Backchannel",
+  "63339/tcp": "Camera-2 Video Stream",
+  "63340/tcp": "Camera-2 Audio Stream",
+  "63341/tcp": "Camera-2 Backchannel",
+  "63342/tcp": "Camera-3 Video Stream",
+  "63343/tcp": "Camera-3 Audio Stream",
+  "63344/tcp": "Camera-3 Backchannel",
+  "63345/tcp": "Camera-4 Video Stream",
+  "63346/tcp": "Camera-4 Audio Stream",
+  "63347/tcp": "Camera-4 Backchannel",
+  "63348/tcp": "Camera-5 Video Stream",
+  "63349/tcp": "Camera-5 Audio Stream",
+  "63350/tcp": "Camera-5 Backchannel"
+}
