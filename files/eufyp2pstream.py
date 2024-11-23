@@ -467,7 +467,7 @@ if __name__ == "__main__":
     BASE_PORT = 63336    
     # Create one Camera Stream Handler per camera.
     for i, serial in enumerate(args.camera_serials):
-        handler = CameraStreamHandler(serial, BASE_PORT + i * 3)
+        handler = CameraStreamHandler(serial, BASE_PORT + i * 3, run_event)
         handler.setup_sockets()
         camera_handlers[serial] = handler
 
