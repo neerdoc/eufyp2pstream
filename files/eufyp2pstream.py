@@ -302,7 +302,7 @@ class CameraStreamHandler:
         self.audio_sock.listen(1)
         self.backchannel_sock.listen(1)
 
-    def start_stream(self, websocket):
+    def start_stream(self):
         self.video_thread = ClientAcceptThread(self.video_sock, self.run_event, "Video", self.ws, self.serial_number)
         self.audio_thread = ClientAcceptThread(self.audio_sock, self.run_event, "Audio", self.ws, self.serial_number)
         self.backchannel_thread = ClientAcceptThread(self.backchannel_sock, self.run_event, "BackChannel", self.ws, self.serial_number)
@@ -368,11 +368,11 @@ async def on_message(message):
             sys.stdout.flush()
         if message_id == START_LISTENING_MESSAGE["messageId"]:
             print(f"Listening started: {payload}")
-            # message_result = payload[message_type]
-            # states = message_result["state"]
-            # for state in states["devices"]:
-            #     self.serialno = state["serialNumber"]
-#            camera_handlers[self.serialno].start_stream(self.ws)
+            message_result = payload[message_type]
+            states = message_result["state"]
+            for state in states["devices"]:
+    #            self.serialno = state["serialNumber"]
+                camera_handlers[state["serialNumber"]].start_stream()
             # self.video_thread = ClientAcceptThread(video_sock, run_event, "Video", self.ws, self.serialno)
             # self.audio_thread = ClientAcceptThread(audio_sock, run_event, "Audio", self.ws, self.serialno)
             # self.backchannel_thread = ClientAcceptThread(backchannel_sock, run_event, "BackChannel", self.ws, self.serialno)
