@@ -9,7 +9,7 @@ import socket
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from queue import Queue
 from threading import Thread
-from typing import get_args
+import argparse
 from websocket import EufySecurityWebSocket
 import json
 
@@ -445,18 +445,26 @@ async def init_websocket():
     os._exit(-1)
 
 if __name__ == "__main__":
-    # Get all arguments.
-    args = get_args()
-    print(f" - args: {args}")
-    # First argument is the WS Security port.
-    ws_security_port = args[1]
-    print(f" - ws_security_port: {ws_security_port}")
-    # The rest of the arguments are the camera serials.
-    camera_serials = args[2:]
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Stream video and audio from multiple Eufy cameras.")
+    parser.add_argument(
+        "--serials",
+        nargs="+",
+        required=True,
+        help="List of camera serial numbers (e.g., --serials CAM1_SERIAL CAM2_SERIAL).",
+    )
+    parser.add_argument(
+        "--ws_security_port",
+        type=int,
+        default=3000,
+        help="Base port number for streaming (default: 3000).",
+    )
+    args = parser.parse_args()
+    print(f"WS Security Port: {args.ws_security_port}")
+    print(f"Camera Serial Numbers: {args.serials}")
 
-    BASE_PORT = 63336
-    
-    
+    # Define constants.
+    BASE_PORT = 63336    
     # Create one Camera Stream Handler per camera.
     for i, serial in enumerate(camera_serials):
         handler = CameraStreamHandler(serial, BASE_PORT + i * 3)

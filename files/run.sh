@@ -14,5 +14,5 @@ CAM4_SN=$(jq --raw-output ".camera_4_serial_number" $CONFIG_PATH)
 CAM5_SN=$(jq --raw-output ".camera_5_serial_number" $CONFIG_PATH)
 
 echo "Starting EufyP2PStream. eufy_security_ws_port is $EUFY_WS_PORT"
-python3 -u /eufyp2pstream.py $EUFY_WS_PORT $CAM1_SN $CAM2_SN $CAM3_SN $CAM4_SN $CAM5_SN
+python3 -u /eufyp2pstream.py --ws_security_port $EUFY_WS_PORT --serials $CAM1_SN $CAM2_SN $CAM3_SN $CAM4_SN $CAM5_SN
 echo "Exited with code $?"
