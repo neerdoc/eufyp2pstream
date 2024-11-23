@@ -14,18 +14,13 @@ map: [config, media]
 host_network: false
 options:
   eufy_security_ws_port: 3000
-  camera_1_serial_number: ""
-  camera_2_serial_number: ""
-  camera_3_serial_number: ""
-  camera_4_serial_number: ""
-  camera_5_serial_number: ""
 schema:
   eufy_security_ws_port: port
-  camera_1_serial_number: string
-  camera_2_serial_number: string
-  camera_3_serial_number: string
-  camera_4_serial_number: string
-  camera_5_serial_number: string
+  camera_1_serial_number: "str?"
+  camera_2_serial_number: "str?"
+  camera_3_serial_number: "str?"
+  camera_4_serial_number: "str?"
+  camera_5_serial_number: "str?"
 ports: {
   "63336/tcp": 63336,
   "63337/tcp": 63337,
