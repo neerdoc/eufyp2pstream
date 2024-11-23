@@ -418,7 +418,7 @@ async def on_message(self, message):
                 await self.ws.send_message(json.dumps(msg))
 
 
-async def init_websocket():
+async def init_websocket(ws_security_port):
     websocket = EufySecurityWebSocket(
         "402f1039-eufy-security-ws",
         ws_security_port,
@@ -448,7 +448,7 @@ if __name__ == "__main__":
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Stream video and audio from multiple Eufy cameras.")
     parser.add_argument(
-        "--serials",
+        "--camera_serials",
         nargs="+",
         required=True,
         help="List of camera serial numbers (e.g., --serials CAM1_SERIAL CAM2_SERIAL).",
@@ -461,18 +461,18 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     print(f"WS Security Port: {args.ws_security_port}")
-    print(f"Camera Serial Numbers: {args.serials}")
+    print(f"Camera Serial Numbers: {args.camera_serials}")
 
     # Define constants.
     BASE_PORT = 63336    
     # Create one Camera Stream Handler per camera.
-    for i, serial in enumerate(camera_serials):
+    for i, serial in enumerate(args.camera_serials):
         handler = CameraStreamHandler(serial, BASE_PORT + i * 3)
         handler.setup_sockets()
         camera_handlers[serial] = handler
 
     # Loop forever.
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(init_websocket())
+    loop.run_until_complete(init_websocket(args.ws_security_port))
 
 
