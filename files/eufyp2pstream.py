@@ -341,11 +341,11 @@ class CameraStreamHandler:
 
 
 # On Open Callback
-async def on_open(self):
+async def on_open():
     print(f" on_open - executed")
 
 # On Close Callback
-async def on_close(self):
+async def on_close():
     print(f" on_close - executed")
 #    self.run_event.set()
 #    self.ws = None
@@ -353,11 +353,11 @@ async def on_close(self):
 #    os._exit(-1)
 
 # On Error Callback
-async def on_error(self, message):
+async def on_error(message):
     print(f" on_error - executed - {message}")
 
 # On Message Callback
-async def on_message(self, message):
+async def on_message(message):
     payload = message.json()
     message_type: str = payload["type"]
     if message_type == "result":
@@ -367,11 +367,12 @@ async def on_message(self, message):
             print(f"on_message result: {payload}")
             sys.stdout.flush()
         if message_id == START_LISTENING_MESSAGE["messageId"]:
+            print(f"Listening started: {payload}")
             # message_result = payload[message_type]
             # states = message_result["state"]
             # for state in states["devices"]:
             #     self.serialno = state["serialNumber"]
-            camera_handlers[self.serialno].start_stream(self.ws)
+#            camera_handlers[self.serialno].start_stream(self.ws)
             # self.video_thread = ClientAcceptThread(video_sock, run_event, "Video", self.ws, self.serialno)
             # self.audio_thread = ClientAcceptThread(audio_sock, run_event, "Audio", self.ws, self.serialno)
             # self.backchannel_thread = ClientAcceptThread(backchannel_sock, run_event, "BackChannel", self.ws, self.serialno)
@@ -392,30 +393,30 @@ async def on_message(self, message):
         sys.stdout.flush()
         if message["event"] == "livestream audio data":
             print(f"on_audio - {payload}")
-            event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
-            event_data_type = EVENT_CONFIGURATION[event_type]["type"]
-            if event_data_type == "event":
-                for queue in self.audio_thread.queues:
-                    if queue.full():
-                        print("Audio queue full.")
-                        queue.get(False)
-                    queue.put(event_value)
+            # event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
+            # event_data_type = EVENT_CONFIGURATION[event_type]["type"]
+            # if event_data_type == "event":
+            #     for queue in self.audio_thread.queues:
+            #         if queue.full():
+            #             print("Audio queue full.")
+            #             queue.get(False)
+            #         queue.put(event_value)
         if message["event"] == "livestream video data":                
             print(f"on_video - {payload}")
-            event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
-            event_data_type = EVENT_CONFIGURATION[event_type]["type"]
-            if event_data_type == "event":
-                for queue in self.video_thread.queues:
-                    if queue.full():
-                        print("Video queue full.")
-                        queue.get(False)
-                    queue.put(event_value)
+            # event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
+            # event_data_type = EVENT_CONFIGURATION[event_type]["type"]
+            # if event_data_type == "event":
+            #     for queue in self.video_thread.queues:
+            #         if queue.full():
+            #             print("Video queue full.")
+            #             queue.get(False)
+            #         queue.put(event_value)
         if message["event"] == "livestream error":
             print(f"Livestream Error! - {payload}")
-            if self.ws and len(self.video_thread.queues) > 0:
-                msg = START_P2P_LIVESTREAM_MESSAGE.copy()
-                msg["serialNumber"] = self.serialno
-                await self.ws.send_message(json.dumps(msg))
+            # if self.ws and len(self.video_thread.queues) > 0:
+            #     msg = START_P2P_LIVESTREAM_MESSAGE.copy()
+            #     msg["serialNumber"] = self.serialno
+            #     await self.ws.send_message(json.dumps(msg))
 
 
 async def init_websocket(ws_security_port):
@@ -467,9 +468,10 @@ if __name__ == "__main__":
     BASE_PORT = 63336    
     # Create one Camera Stream Handler per camera.
     for i, serial in enumerate(args.camera_serials):
-        handler = CameraStreamHandler(serial, BASE_PORT + i * 3, run_event)
-        handler.setup_sockets()
-        camera_handlers[serial] = handler
+        if serial != None:
+            handler = CameraStreamHandler(serial, BASE_PORT + i * 3, run_event)
+            handler.setup_sockets()
+            camera_handlers[serial] = handler
 
     # Loop forever.
     loop = asyncio.get_event_loop()
