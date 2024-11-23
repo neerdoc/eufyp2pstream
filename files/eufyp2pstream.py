@@ -371,8 +371,12 @@ async def on_message(message):
             message_result = payload[message_type]
             states = message_result["state"]
             for state in states["devices"]:
-    #            self.serialno = state["serialNumber"]
-                camera_handlers[state["serialNumber"]].start_stream()
+                serialno = state["serialNumber"]
+                if serialno in camera_handlers:
+                    camera_handlers[serialno].start_stream()
+                else:
+                    print(f"Found unknown Eufy camera with serial number {serialno}.")
+
             # self.video_thread = ClientAcceptThread(video_sock, run_event, "Video", self.ws, self.serialno)
             # self.audio_thread = ClientAcceptThread(audio_sock, run_event, "Audio", self.ws, self.serialno)
             # self.backchannel_thread = ClientAcceptThread(backchannel_sock, run_event, "BackChannel", self.ws, self.serialno)
@@ -468,7 +472,7 @@ if __name__ == "__main__":
     BASE_PORT = 63336    
     # Create one Camera Stream Handler per camera.
     for i, serial in enumerate(args.camera_serials):
-        if serial != None:
+        if serial != 'null':
             handler = CameraStreamHandler(serial, BASE_PORT + i * 3, run_event)
             handler.setup_sockets()
             camera_handlers[serial] = handler
