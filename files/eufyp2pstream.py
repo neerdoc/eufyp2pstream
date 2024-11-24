@@ -169,7 +169,6 @@ class ClientAcceptThread(threading.Thread):
                     self.my_threads.append(thread)
                     thread.start()
             except socket.timeout:
-                print("socket timeout for ", self.serialno)
                 pass
         print("ClientAcceptThread ", self.name, " ended for ", self.serialno)
 
@@ -293,7 +292,6 @@ class ClientRecvThread(threading.Thread):
 # Camera Stream Handler
 class CameraStreamHandler():
     def __init__(self, serial_number, start_port, run_event):
-        # threading.Thread.__init__(self)
         print(
             f" - CameraStreamHandler - __init__ - serial_number: {serial_number} - video_port: {start_port} - audio_port: {start_port + 1} - backchannel_port: {start_port + 2}"
         )
@@ -314,26 +312,6 @@ class CameraStreamHandler():
             "command": "device.stop_livestream",
             "serialNumber": self.serial_number,
         }
-    # def run(self):
-    #     # Main logic of the handler goes here
-    #     while self.run_event.is_set():
-    #         # Example of handling sockets
-    #         try:
-    #             # Your socket handling code here
-    #             pass
-    #         except select.error:
-    #             print("Select error on socket ", self.name)
-    #             pass
-    #         sys.stdout.flush()
-    #         try:
-    #             self.client_sock.shutdown(socket.SHUT_RDWR)
-    #         except OSError:
-    #             print("Error shutdown socket: ", self.name)
-    #         sys.stdout.flush()
-    #         self.client_sock.close()
-    #         msg = STOP_TALKBACK.copy()
-    #         msg["serialNumber"] = self.serialno
-    #         asyncio.run(self.ws.send_message(json.dumps(msg)))
 
     def setup_sockets(self):
         self.video_sock.bind(("0.0.0.0", self.start_port))
@@ -471,9 +449,11 @@ async def on_message(message):
         event_type = message["event"]
         sys.stdout.flush()
         if message["event"] == "livestream audio data":
-            # print(f"on_audio - {message}")
+            print(f"on_audio")
             event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
+            print("event_value: ", event_value)
             event_data_type = EVENT_CONFIGURATION[event_type]["type"]
+            print("event_data_type: ", event_data_type)
             if event_data_type == "event":
                 print(f"##################################################################")
                 print(f"on_audio - {message['serialNumber']}")
