@@ -141,8 +141,9 @@ class ClientAcceptThread(threading.Thread):
         while not self.run_event.is_set():
             print("Updaing threads for ", self.name)
             self.update_threads()
-            print("Waiting for connection for ", self.name)
+            print("Waiting for ", self.name, " connection for ", self.serialno)
             sys.stdout.flush()
+            print("Flush done for ", self.serialno)
             try:
                 client_sock, client_addr = self.socket.accept()
                 print("New connection added: ", client_addr, " for ", self.name)
@@ -338,16 +339,19 @@ class CameraStreamHandler():
         self.video_sock.bind(("0.0.0.0", self.start_port))
         self.video_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.video_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self.video_sock.settimeout(1)  # timeout for listening
         self.audio_sock.bind(("0.0.0.0", self.start_port + 1))
         self.audio_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.audio_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self.audio_sock.settimeout(1)  # timeout for listening
         self.backchannel_sock.bind(("0.0.0.0", self.start_port + 2))
         self.backchannel_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.backchannel_sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.backchannel_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        self.video_sock.listen(1)
-        self.audio_sock.listen(1)
-        self.backchannel_sock.listen(1)
+        self.backchannel_sock.settimeout(1)  # timeout for listening
+        self.video_sock.listen()
+        self.audio_sock.listen()
+        self.backchannel_sock.listen()
 
     def start_stream(self):
         print(f"Starting stream for camera {self.serial_number}.")
