@@ -471,13 +471,13 @@ async def on_message(message):
         event_type = message["event"]
         sys.stdout.flush()
         if message["event"] == "livestream audio data":
-            print(f"on_audio - {message}")
+            # print(f"on_audio - {message}")
             event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
             event_data_type = EVENT_CONFIGURATION[event_type]["type"]
             if event_data_type == "event":
                 print(f"##################################################################")
-                print(f"on_audio - {payload['event']['serialNumber']}")
-                serialno = payload["source"]["serialNumber"]
+                print(f"on_audio - {message['serialNumber']}")
+                serialno = message['serialNumber']
                 if serialno in camera_handlers:
                     for queue in camera_handlers[serialno].audio_thread.queues:
                         if queue.full():
@@ -494,8 +494,8 @@ async def on_message(message):
             event_data_type = EVENT_CONFIGURATION[event_type]["type"]
             if event_data_type == "event":
                 print(f"##################################################################")
-                print(f"on_video - {payload['source']['serialNumber']}")
-                serialno = payload['event']["source"]["serialNumber"]
+                print(f"on_video - {message['serialNumber']}")
+                serialno = message['serialNumber']
                 if serialno in camera_handlers:
                     for queue in camera_handlers[serialno].video_thread.queues:
                         if queue.full():
