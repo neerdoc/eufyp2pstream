@@ -302,18 +302,18 @@ class CameraStreamHandler():
         self.video_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.audio_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.backchannel_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.start_livestream_msg = {
-            "messageId": "start_livestream",
-            "command": "device.start_livestream",
-            "serialNumber": self.serial_number,
-        }
-        self.stop_livestream_msg = {
-            "messageId": "stop_livestream",
-            "command": "device.stop_livestream",
-            "serialNumber": self.serial_number,
-        }
+        # self.start_livestream_msg = {
+        #     "messageId": "start_livestream",
+        #     "command": "device.start_livestream",
+        #     "serialNumber": self.serial_number,
+        # }
+        # self.stop_livestream_msg = {
+        #     "messageId": "stop_livestream",
+        #     "command": "device.stop_livestream",
+        #     "serialNumber": self.serial_number,
+        # }
 
-    def setup_sockets(self):
+    # def setup_sockets(self):
         self.video_sock.bind(("0.0.0.0", self.start_port))
         self.video_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.video_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -359,29 +359,29 @@ class CameraStreamHandler():
     def setWs(self, ws: EufySecurityWebSocket):
         self.ws = ws
 
-    async def _start_stream_async(self, websocket):
-        await websocket.send(json.dumps(self.start_livestream_msg))
-        video_conn, _ = self.video_sock.accept()
-        audio_conn, _ = self.audio_sock.accept()
-        backchannel_conn, _ = self.backchannel_sock.accept()
+    # async def _start_stream_async(self, websocket):
+    #     await websocket.send(json.dumps(self.start_livestream_msg))
+    #     video_conn, _ = self.video_sock.accept()
+    #     audio_conn, _ = self.audio_sock.accept()
+    #     backchannel_conn, _ = self.backchannel_sock.accept()
 
-        while True:
-            video_data = await websocket.recv()
-            audio_data = await websocket.recv()
-            video_conn.sendall(video_data)
-            audio_conn.sendall(audio_data)
-            backchannel_conn.sendall(
-                b""
-            )  # Send empty data to keep the backchannel alive
+    #     while True:
+    #         video_data = await websocket.recv()
+    #         audio_data = await websocket.recv()
+    #         video_conn.sendall(video_data)
+    #         audio_conn.sendall(audio_data)
+    #         backchannel_conn.sendall(
+    #             b""
+    #         )  # Send empty data to keep the backchannel alive
 
-    def stop_stream(self, websocket):
-        asyncio.run(self._stop_stream_async(websocket))
+    # def stop_stream(self, websocket):
+    #     asyncio.run(self._stop_stream_async(websocket))
 
-    async def _stop_stream_async(self, websocket):
-        await websocket.send(json.dumps(self.stop_livestream_msg))
-        self.video_sock.close()
-        self.audio_sock.close()
-        self.backchannel_sock.close()
+    # async def _stop_stream_async(self, websocket):
+    #     await websocket.send(json.dumps(self.stop_livestream_msg))
+    #     self.video_sock.close()
+    #     self.audio_sock.close()
+    #     self.backchannel_sock.close()
 
 
 # On Open Callback
@@ -494,7 +494,7 @@ async def on_message(message):
             #     msg = START_P2P_LIVESTREAM_MESSAGE.copy()
             #     msg["serialNumber"] = self.serialno
             #     await self.ws.send_message(json.dumps(msg))
-
+    print("on_message done")
 
 async def init_websocket(ws_security_port):
     websocket = EufySecurityWebSocket(
@@ -550,7 +550,7 @@ if __name__ == "__main__":
     for i, serial in enumerate(args.camera_serials):
         if serial != "null":
             handler = CameraStreamHandler(serial, BASE_PORT + i * 3, run_event)
-            handler.setup_sockets()
+            # handler.setup_sockets()
             camera_handlers[serial] = handler
 
     # Loop forever.
