@@ -135,6 +135,7 @@ class ClientAcceptThread(threading.Thread):
         msg = STOP_TALKBACK.copy()
         msg["serialNumber"] = self.serialno
         asyncio.run(self.ws.send_message(json.dumps(msg)))
+        print("stop talkback sent for ", self.serialno)
         while not self.run_event.is_set():
             self.update_threads()
             sys.stdout.flush()
@@ -164,6 +165,7 @@ class ClientAcceptThread(threading.Thread):
                     thread.start()
             except socket.timeout:
                 pass
+        print("ClientAcceptThread ended for ", self.serialno)
 
 
 class ClientSendThread(threading.Thread):
@@ -369,8 +371,6 @@ class CameraStreamHandler():
 
     def setWs(self, ws: EufySecurityWebSocket):
         self.ws = ws
-
-        # asyncio.run(self._start_stream_async(websocket))
 
     async def _start_stream_async(self, websocket):
         await websocket.send(json.dumps(self.start_livestream_msg))
