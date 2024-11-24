@@ -424,35 +424,40 @@ async def on_message(message):
             error_code = payload["errorCode"]
             print(f"Talkback error: {error_code}")
             # if error_code == "device_talkback_not_running":
-            #     msg = START_TALKBACK.copy()
-            #     msg["serialNumber"] = self.serialno
-            #     await self.ws.send_message(json.dumps(msg))
+                # msg = START_TALKBACK.copy()
+                # msg["serialNumber"] = self.serialno
+                # await self.ws.send_message(json.dumps(msg))
 
     if message_type == "event":
         message = payload[message_type]
         event_type = message["event"]
         sys.stdout.flush()
         if message["event"] == "livestream audio data":
-            print(f"on_audio - {payload}")
-            # event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
-            # event_data_type = EVENT_CONFIGURATION[event_type]["type"]
-            # if event_data_type == "event":
+            # print(f"on_audio - {payload}")
+            event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
+            event_data_type = EVENT_CONFIGURATION[event_type]["type"]
+            if event_data_type == "event":
+                print(f"##################################################################")
+                print(f"on_audio - {payload}")
+
             #     for queue in self.audio_thread.queues:
             #         if queue.full():
             #             print("Audio queue full.")
             #             queue.get(False)
             #         queue.put(event_value)
         if message["event"] == "livestream video data":
-            print(f"on_video - {payload}")
-            # event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
-            # event_data_type = EVENT_CONFIGURATION[event_type]["type"]
-            # if event_data_type == "event":
-            #     for queue in self.video_thread.queues:
+            event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
+            event_data_type = EVENT_CONFIGURATION[event_type]["type"]
+            if event_data_type == "event":
+                print(f"##################################################################")
+                print(f"on_video - {payload}")
+                # for queue in self.video_thread.queues:
             #         if queue.full():
             #             print("Video queue full.")
             #             queue.get(False)
             #         queue.put(event_value)
         if message["event"] == "livestream error":
+            print(f"##################################################################")
             print(f"Livestream Error! - {payload}")
             # if self.ws and len(self.video_thread.queues) > 0:
             #     msg = START_P2P_LIVESTREAM_MESSAGE.copy()
