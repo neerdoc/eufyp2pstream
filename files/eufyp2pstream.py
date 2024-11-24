@@ -1,10 +1,10 @@
-
 import os
 import signal
 import sys
 import threading
 from aiohttp import ClientSession
 import asyncio
+import select
 import socket
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from queue import Queue
@@ -55,7 +55,7 @@ SEND_TALKBACK_AUDIO_DATA = {
     "messageId": "talkback_audio_data",
     "command": "device.talkback_audio_data",
     "serialNumber": None,
-    "buffer": None
+    "buffer": None,
 }
 
 STOP_TALKBACK = {
@@ -75,29 +75,34 @@ P2P_LIVESTREAMING_STATUS = "p2pLiveStreamingStatus"
 
 START_LISTENING_MESSAGE = {"messageId": "start_listening", "command": "start_listening"}
 
-TALKBACK_RESULT_MESSAGE = {"messageId": "talkback_audio_data", "errorCode": "device_talkback_not_running"}
+TALKBACK_RESULT_MESSAGE = {
+    "messageId": "talkback_audio_data",
+    "errorCode": "device_talkback_not_running",
+}
 
 DRIVER_CONNECT_MESSAGE = {"messageId": "driver_connect", "command": "driver.connect"}
 
 
-
 def exit_handler(signum, frame):
-    print(f'Signal handler called with signal {signum}')
+    print(f"Signal handler called with signal {signum}")
     run_event.set()
+
 
 # Install signal handler
 signal.signal(signal.SIGINT, exit_handler)
 
 
 def exit_handler(signum, frame):
-    print(f'Signal handler called with signal {signum}')
+    print(f"Signal handler called with signal {signum}")
     run_event.set()
+
 
 # Install signal handler
 signal.signal(signal.SIGINT, exit_handler)
+
 
 class ClientAcceptThread(threading.Thread):
-    def __init__(self,socket,run_event,name,ws,serialno):
+    def __init__(self, socket, run_event, name, ws, serialno):
         threading.Thread.__init__(self)
         self.socket = socket
         self.queues = []
@@ -135,17 +140,21 @@ class ClientAcceptThread(threading.Thread):
             sys.stdout.flush()
             try:
                 client_sock, client_addr = self.socket.accept()
-                print ("New connection added: ", client_addr, " for ", self.name)
+                print("New connection added: ", client_addr, " for ", self.name)
                 sys.stdout.flush()
 
                 if self.name == "BackChannel":
                     client_sock.setblocking(True)
                     print("Starting BackChannel")
-                    thread = ClientRecvThread(client_sock, run_event, self.name, self.ws, self.serialno)
+                    thread = ClientRecvThread(
+                        client_sock, run_event, self.name, self.ws, self.serialno
+                    )
                     thread.start()
                 else:
                     client_sock.setblocking(False)
-                    thread = ClientSendThread(client_sock, run_event, self.name, self.ws, self.serialno)
+                    thread = ClientSendThread(
+                        client_sock, run_event, self.name, self.ws, self.serialno
+                    )
                     self.queues.append(thread.queue)
                     if self.ws:
                         msg = START_P2P_LIVESTREAM_MESSAGE.copy()
@@ -156,8 +165,9 @@ class ClientAcceptThread(threading.Thread):
             except socket.timeout:
                 pass
 
+
 class ClientSendThread(threading.Thread):
-    def __init__(self,client_sock,run_event,name,ws,serialno):
+    def __init__(self, client_sock, run_event, name, ws, serialno):
         threading.Thread.__init__(self)
         self.client_sock = client_sock
         self.queue = Queue(100)
@@ -167,13 +177,14 @@ class ClientSendThread(threading.Thread):
         self.serialno = serialno
 
     def run(self):
-        print ("Thread running: ", self.name)
+        print("Thread running: ", self.name)
         sys.stdout.flush()
 
         try:
             while not self.run_event.is_set():
-                ready_to_read, ready_to_write, in_error = \
-                    select.select([], [self.client_sock], [self.client_sock], 2)
+                ready_to_read, ready_to_write, in_error = select.select(
+                    [], [self.client_sock], [self.client_sock], 2
+                )
                 if len(in_error):
                     print("Exception in socket", self.name)
                     sys.stdout.flush()
@@ -183,9 +194,7 @@ class ClientSendThread(threading.Thread):
                     sys.stdout.flush()
                     break
                 if not self.queue.empty():
-                    self.client_sock.sendall(
-                        bytearray(self.queue.get(True)["data"])
-                    )
+                    self.client_sock.sendall(bytearray(self.queue.get(True)["data"]))
         except socket.error as e:
             print("Connection lost", self.name, e)
             pass
@@ -195,13 +204,14 @@ class ClientSendThread(threading.Thread):
         try:
             self.client_sock.shutdown(socket.SHUT_RDWR)
         except OSError:
-            print ("Error shutdown socket: ", self.name)
+            print("Error shutdown socket: ", self.name)
         self.client_sock.close()
-        print ("Thread stopping: ", self.name)
+        print("Thread stopping: ", self.name)
         sys.stdout.flush()
 
+
 class ClientRecvThread(threading.Thread):
-    def __init__(self,client_sock,run_event,name,ws,serialno):
+    def __init__(self, client_sock, run_event, name, ws, serialno):
         threading.Thread.__init__(self)
         self.client_sock = client_sock
         self.run_event = run_event
@@ -214,12 +224,18 @@ class ClientRecvThread(threading.Thread):
         msg["serialNumber"] = self.serialno
         asyncio.run(self.ws.send_message(json.dumps(msg)))
         try:
-            curr_packet = bytearray() 
+            curr_packet = bytearray()
             no_data = 0
             while not self.run_event.is_set():
                 try:
-                    ready_to_read, ready_to_write, in_error = \
-                        select.select([self.client_sock,], [], [self.client_sock], 2)
+                    ready_to_read, ready_to_write, in_error = select.select(
+                        [
+                            self.client_sock,
+                        ],
+                        [],
+                        [self.client_sock],
+                        2,
+                    )
                     if len(in_error):
                         print("Exception in socket", self.name)
                         sys.stdout.flush()
@@ -227,18 +243,18 @@ class ClientRecvThread(threading.Thread):
                     if len(ready_to_read):
                         data = self.client_sock.recv(RECV_CHUNK_SIZE)
                         curr_packet += bytearray(data)
-                        if len(data) > 0: # and len(data) <= RECV_CHUNK_SIZE:
+                        if len(data) > 0:  # and len(data) <= RECV_CHUNK_SIZE:
                             msg = SEND_TALKBACK_AUDIO_DATA.copy()
                             msg["serialNumber"] = self.serialno
-                            msg["buffer"] = list(bytes(curr_packet)) 
+                            msg["buffer"] = list(bytes(curr_packet))
                             asyncio.run(self.ws.send_message(json.dumps(msg)))
-                            curr_packet = bytearray() 
+                            curr_packet = bytearray()
                             no_data = 0
                         else:
                             no_data += 1
                     else:
                         no_data += 1
-                    if (no_data >= 15):
+                    if no_data >= 15:
                         print("15x in a row no data in socket ", self.name)
                         sys.stdout.flush()
                         break
@@ -258,17 +274,20 @@ class ClientRecvThread(threading.Thread):
         try:
             self.client_sock.shutdown(socket.SHUT_RDWR)
         except OSError:
-            print ("Error shutdown socket: ", self.name)
+            print("Error shutdown socket: ", self.name)
         sys.stdout.flush()
         self.client_sock.close()
         msg = STOP_TALKBACK.copy()
         msg["serialNumber"] = self.serialno
         asyncio.run(self.ws.send_message(json.dumps(msg)))
 
+
 # Camera Stream Handler
 class CameraStreamHandler:
     def __init__(self, serial_number, start_port, run_event):
-        print(f" - CameraStreamHandler - __init__ - serial_number: {serial_number} - video_port: {start_port} - audio_port: {start_port + 1} - backchannel_port: {start_port + 2}")
+        print(
+            f" - CameraStreamHandler - __init__ - serial_number: {serial_number} - video_port: {start_port} - audio_port: {start_port + 1} - backchannel_port: {start_port + 2}"
+        )
         self.serial_number = serial_number
         self.start_port = start_port
         self.run_event = run_event
@@ -303,14 +322,24 @@ class CameraStreamHandler:
         self.backchannel_sock.listen(1)
 
     def start_stream(self):
-        self.video_thread = ClientAcceptThread(self.video_sock, self.run_event, "Video", self.ws, self.serial_number)
-        self.audio_thread = ClientAcceptThread(self.audio_sock, self.run_event, "Audio", self.ws, self.serial_number)
-        self.backchannel_thread = ClientAcceptThread(self.backchannel_sock, self.run_event, "BackChannel", self.ws, self.serial_number)
+        self.video_thread = ClientAcceptThread(
+            self.video_sock, self.run_event, "Video", self.ws, self.serial_number
+        )
+        self.audio_thread = ClientAcceptThread(
+            self.audio_sock, self.run_event, "Audio", self.ws, self.serial_number
+        )
+        self.backchannel_thread = ClientAcceptThread(
+            self.backchannel_sock,
+            self.run_event,
+            "BackChannel",
+            self.ws,
+            self.serial_number,
+        )
         self.audio_thread.start()
         self.video_thread.start()
         self.backchannel_thread.start()
 
-    def setWs(self, ws : EufySecurityWebSocket):
+    def setWs(self, ws: EufySecurityWebSocket):
         self.ws = ws
 
         # asyncio.run(self._start_stream_async(websocket))
@@ -326,7 +355,9 @@ class CameraStreamHandler:
             audio_data = await websocket.recv()
             video_conn.sendall(video_data)
             audio_conn.sendall(audio_data)
-            backchannel_conn.sendall(b"")  # Send empty data to keep the backchannel alive
+            backchannel_conn.sendall(
+                b""
+            )  # Send empty data to keep the backchannel alive
 
     def stop_stream(self, websocket):
         asyncio.run(self._stop_stream_async(websocket))
@@ -338,23 +369,26 @@ class CameraStreamHandler:
         self.backchannel_sock.close()
 
 
-
-
 # On Open Callback
 async def on_open():
     print(f" on_open - executed")
 
+
 # On Close Callback
 async def on_close():
     print(f" on_close - executed")
+
+
 #    self.run_event.set()
 #    self.ws = None
 #    stop()
 #    os._exit(-1)
 
+
 # On Error Callback
 async def on_error(message):
     print(f" on_error - executed - {message}")
+
 
 # On Message Callback
 async def on_message(message):
@@ -383,7 +417,10 @@ async def on_message(message):
             # self.audio_thread.start()
             # self.video_thread.start()
             # self.backchannel_thread.start()
-        if message_id == TALKBACK_RESULT_MESSAGE["messageId"] and "errorCode" in payload:
+        if (
+            message_id == TALKBACK_RESULT_MESSAGE["messageId"]
+            and "errorCode" in payload
+        ):
             error_code = payload["errorCode"]
             print(f"Talkback error: {error_code}")
             # if error_code == "device_talkback_not_running":
@@ -405,7 +442,7 @@ async def on_message(message):
             #             print("Audio queue full.")
             #             queue.get(False)
             #         queue.put(event_value)
-        if message["event"] == "livestream video data":                
+        if message["event"] == "livestream video data":
             print(f"on_video - {payload}")
             # event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
             # event_data_type = EVENT_CONFIGURATION[event_type]["type"]
@@ -449,9 +486,12 @@ async def init_websocket(ws_security_port):
         print("init_websocket failed. Exiting.")
     os._exit(-1)
 
+
 if __name__ == "__main__":
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Stream video and audio from multiple Eufy cameras.")
+    parser = argparse.ArgumentParser(
+        description="Stream video and audio from multiple Eufy cameras."
+    )
     parser.add_argument(
         "--camera_serials",
         nargs="+",
@@ -469,10 +509,10 @@ if __name__ == "__main__":
     print(f"Camera Serial Numbers: {args.camera_serials}")
 
     # Define constants.
-    BASE_PORT = 63336    
+    BASE_PORT = 63336
     # Create one Camera Stream Handler per camera.
     for i, serial in enumerate(args.camera_serials):
-        if serial != 'null':
+        if serial != "null":
             handler = CameraStreamHandler(serial, BASE_PORT + i * 3, run_event)
             handler.setup_sockets()
             camera_handlers[serial] = handler
@@ -480,5 +520,3 @@ if __name__ == "__main__":
     # Loop forever.
     loop = asyncio.get_event_loop()
     loop.run_until_complete(init_websocket(args.ws_security_port))
-
-
