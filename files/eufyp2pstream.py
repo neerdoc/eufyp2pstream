@@ -462,7 +462,7 @@ async def on_message(message):
         logMessage(f"message is of type event")
         message = payload[message_type]
         event_type = message["event"]
-
+        logMessage(f"event_type: {event_type}")
         if message["event"] == "livestream audio data":
             logMessage(f"on_audio")
             event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
@@ -486,9 +486,12 @@ async def on_message(message):
             #             logMessage(f"Audio queue full.")
             #             queue.get(False)
             #         queue.put(event_value)
-        if message["event"] == "livestream video data":
+        elif message["event"] == "livestream video data":
+            logMessage(f"on_video")
             event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
+            logMessage(f"event_value: {event_value}")
             event_data_type = EVENT_CONFIGURATION[event_type]["type"]
+            logMessage(f"event_data_type: {event_data_type}")
             if event_data_type == "event":
                 logMessage(
                     f"##################################################################"
@@ -506,7 +509,7 @@ async def on_message(message):
             #             logMessage(f"Video queue full.")
             #             queue.get(False)
             #         queue.put(event_value)
-        if message["event"] == "livestream error":
+        elif message["event"] == "livestream error":
             logMessage(
                 f"##################################################################"
             )
@@ -515,6 +518,8 @@ async def on_message(message):
             #     msg = START_P2P_LIVESTREAM_MESSAGE.copy()
             #     msg["serialNumber"] = self.serialno
             #     await self.ws.send_message(json.dumps(msg))
+        else:
+            logMessage(f"Unknown event type: {message['event']}")
     else:
         logMessage(f"Unknown message type: {message_type}")
     logMessage(f"on_message done")
