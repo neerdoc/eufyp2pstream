@@ -321,7 +321,7 @@ class CameraStreamHandler:
         self.audio_sock.listen(1)
         self.backchannel_sock.listen(1)
 
-    def start_stream(self):
+    async def start_stream(self):
         self.video_thread = ClientAcceptThread(
             self.video_sock, self.run_event, "Video", self.ws, self.serial_number
         )
