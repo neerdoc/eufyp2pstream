@@ -283,8 +283,9 @@ class ClientRecvThread(threading.Thread):
 
 
 # Camera Stream Handler
-class CameraStreamHandler:
+class CameraStreamHandler():
     def __init__(self, serial_number, start_port, run_event):
+        # threading.Thread.__init__(self)
         print(
             f" - CameraStreamHandler - __init__ - serial_number: {serial_number} - video_port: {start_port} - audio_port: {start_port + 1} - backchannel_port: {start_port + 2}"
         )
@@ -305,6 +306,26 @@ class CameraStreamHandler:
             "command": "device.stop_livestream",
             "serialNumber": self.serial_number,
         }
+    # def run(self):
+    #     # Main logic of the handler goes here
+    #     while self.run_event.is_set():
+    #         # Example of handling sockets
+    #         try:
+    #             # Your socket handling code here
+    #             pass
+    #         except select.error:
+    #             print("Select error on socket ", self.name)
+    #             pass
+    #         sys.stdout.flush()
+    #         try:
+    #             self.client_sock.shutdown(socket.SHUT_RDWR)
+    #         except OSError:
+    #             print("Error shutdown socket: ", self.name)
+    #         sys.stdout.flush()
+    #         self.client_sock.close()
+    #         msg = STOP_TALKBACK.copy()
+    #         msg["serialNumber"] = self.serialno
+    #         asyncio.run(self.ws.send_message(json.dumps(msg)))
 
     def setup_sockets(self):
         self.video_sock.bind(("0.0.0.0", self.start_port))
@@ -321,13 +342,16 @@ class CameraStreamHandler:
         self.audio_sock.listen(1)
         self.backchannel_sock.listen(1)
 
-    async def start_stream(self):
+    def start_stream(self):
+        print(f"Starting stream for camera {self.serial_number}.")
         self.video_thread = ClientAcceptThread(
             self.video_sock, self.run_event, "Video", self.ws, self.serial_number
         )
+        print(f"Video thread setup.")
         self.audio_thread = ClientAcceptThread(
             self.audio_sock, self.run_event, "Audio", self.ws, self.serial_number
         )
+        print(f"Audio thread setup.")
         self.backchannel_thread = ClientAcceptThread(
             self.backchannel_sock,
             self.run_event,
@@ -335,9 +359,13 @@ class CameraStreamHandler:
             self.ws,
             self.serial_number,
         )
+        print(f"Backchannel thread setup.")
         self.audio_thread.start()
+        print("Audio thread started.")
         self.video_thread.start()
+        print("Video thread started.")
         self.backchannel_thread.start()
+        print("Backchannel thread started.")
 
     def setWs(self, ws: EufySecurityWebSocket):
         self.ws = ws
@@ -401,13 +429,14 @@ async def on_message(message):
             print(f"on_message result: {payload}")
             sys.stdout.flush()
         if message_id == START_LISTENING_MESSAGE["messageId"]:
-            print(f"Listening started: {payload}")
+            # print(f"Listening started: {payload}")
             message_result = payload[message_type]
             states = message_result["state"]
             for state in states["devices"]:
                 serialno = state["serialNumber"]
                 if serialno in camera_handlers:
                     camera_handlers[serialno].start_stream()
+                    print(f"Started stream for camera {serialno}.")
                 else:
                     print(f"Found unknown Eufy camera with serial number {serialno}.")
 
