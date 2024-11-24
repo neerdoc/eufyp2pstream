@@ -438,8 +438,14 @@ async def on_message(message):
             event_data_type = EVENT_CONFIGURATION[event_type]["type"]
             if event_data_type == "event":
                 print(f"##################################################################")
-                print(f"on_audio - {payload}")
-
+                print(f"on_audio - {payload['source']['serialNumber']}")
+                serialno = payload["source"]["serialNumber"]
+                if serialno in camera_handlers:
+                    for queue in camera_handlers[serialno].audio_thread.queues:
+                        if queue.full():
+                            print("Audio queue full.")
+                            queue.get(False)
+                        queue.put(event_value)
             #     for queue in self.audio_thread.queues:
             #         if queue.full():
             #             print("Audio queue full.")
@@ -450,7 +456,14 @@ async def on_message(message):
             event_data_type = EVENT_CONFIGURATION[event_type]["type"]
             if event_data_type == "event":
                 print(f"##################################################################")
-                print(f"on_video - {payload}")
+                print(f"on_video - {payload['source']['serialNumber']}")
+                serialno = payload["source"]["serialNumber"]
+                if serialno in camera_handlers:
+                    for queue in camera_handlers[serialno].video_thread.queues:
+                        if queue.full():
+                            print("Video queue full.")
+                            queue.get(False)
+                        queue.put(event_value)
                 # for queue in self.video_thread.queues:
             #         if queue.full():
             #             print("Video queue full.")
