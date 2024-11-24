@@ -100,8 +100,9 @@ def logMessage(message):
 
 
 class ClientAcceptThread(threading.Thread):
-    # ClientAcceptThread
+    """Thread to accept incoming connections from clients."""
     def __init__(self, socket, run_event, name, ws, serialno):
+        """Initialize the thread."""
         threading.Thread.__init__(self)
         self.socket = socket
         self.queues = []
@@ -112,7 +113,8 @@ class ClientAcceptThread(threading.Thread):
         self.my_threads = []
 
     def update_threads(self):
-        logMessage(f"Updating {self.name} threads for {self.serialno}")
+        """Update the list of active threads."""
+#        logMessage(f"Updating {self.name} threads for {self.serialno}")
         my_threads_before = len(self.my_threads)
         for thread in self.my_threads:
             if not thread.is_alive():
@@ -121,34 +123,33 @@ class ClientAcceptThread(threading.Thread):
         if self.ws and my_threads_before > 0 and len(self.my_threads) == 0:
             if self.name == "BackChannel":
                 logMessage(f"All clients died (BackChannel): {self.name}")
-
             else:
                 logMessage(f"All clients died. Stopping Stream: {self.name}")
-
                 msg = STOP_P2P_LIVESTREAM_MESSAGE.copy()
                 msg["serialNumber"] = self.serialno
                 asyncio.run(self.ws.send_message(json.dumps(msg)))
-        logMessage(f"Done updating {self.name} threads for {self.serialno}")
+#        logMessage(f"Done updating {self.name} threads for {self.serialno}")
 
     def run(self):
+        """Run the thread to accept incoming connections."""
         logMessage(f"Accepting {self.name} connection for {self.serialno}")
         msg = STOP_TALKBACK.copy()
         msg["serialNumber"] = self.serialno
         asyncio.run(self.ws.send_message(json.dumps(msg)))
         logMessage(f"stop talkback sent for {self.serialno}")
         while not self.run_event.is_set():
-            logMessage(f"Updaing threads for {self.name}")
+#            logMessage(f"Updating threads for {self.name}")
             self.update_threads()
-            logMessage(f"Waiting for {self.name} connection for {self.serialno}")
+#            logMessage(f"Waiting for {self.name} connection for {self.serialno}")
 
-            logMessage(f"Flush done for {self.serialno}")
+#            logMessage(f"Flush done for {self.serialno}")
             try:
                 client_sock, client_addr = self.socket.accept()
-                logMessage(f"New connection added: {client_addr} for {self.name}")
+#                logMessage(f"New connection added: {client_addr} for {self.name}")
 
                 if self.name == "BackChannel":
                     client_sock.setblocking(True)
-                    logMessage(f"Starting BackChannel")
+#                    logMessage(f"Starting BackChannel")
                     thread = ClientRecvThread(
                         client_sock, run_event, self.name, self.ws, self.serialno
                     )
@@ -171,7 +172,9 @@ class ClientAcceptThread(threading.Thread):
 
 
 class ClientSendThread(threading.Thread):
+    """Thread to send data to clients."""
     def __init__(self, client_sock, run_event, name, ws, serialno):
+        """Initialize the thread."""
         threading.Thread.__init__(self)
         self.client_sock = client_sock
         self.queue = Queue(100)
@@ -181,7 +184,8 @@ class ClientSendThread(threading.Thread):
         self.serialno = serialno
 
     def run(self):
-        logMessage(f"Thread running: {self.name}")
+        """Run the thread to send data to clients."""
+        logMessage(f"Thread {self.name} running for {self.serialno}")
 
         try:
             while not self.run_event.is_set():
@@ -209,11 +213,13 @@ class ClientSendThread(threading.Thread):
         except OSError:
             logMessage(f"Error shutdown socket: {self.name}")
         self.client_sock.close()
-        logMessage(f"Thread stopping: {self.name}")
+        logMessage(f"Thread {self.name} stopping for {self.serialno}")
 
 
 class ClientRecvThread(threading.Thread):
+    """Thread to receive data from clients."""
     def __init__(self, client_sock, run_event, name, ws, serialno):
+        """Initialize the thread."""
         threading.Thread.__init__(self)
         self.client_sock = client_sock
         self.run_event = run_event
@@ -222,6 +228,7 @@ class ClientRecvThread(threading.Thread):
         self.serialno = serialno
 
     def run(self):
+        """Run the thread to receive data from clients."""
         msg = START_TALKBACK.copy()
         msg["serialNumber"] = self.serialno
         asyncio.run(self.ws.send_message(json.dumps(msg)))
@@ -286,7 +293,9 @@ class ClientRecvThread(threading.Thread):
 
 # Camera Stream Handler
 class CameraStreamHandler:
+    """Handler for camera streams."""
     def __init__(self, serial_number, start_port, run_event):
+        """Initialize the handler."""
         logMessage(
             f" - CameraStreamHandler - __init__ - serial_number: {serial_number} - video_port: {start_port} - audio_port: {start_port + 1} - backchannel_port: {start_port + 2}"
         )
@@ -327,6 +336,7 @@ class CameraStreamHandler:
         self.backchannel_sock.listen()
 
     def start_stream(self):
+        """Start the stream."""
         logMessage(f"Starting stream for camera {self.serial_number}.")
         self.video_thread = ClientAcceptThread(
             self.video_sock, self.run_event, "Video", self.ws, self.serial_number
@@ -352,6 +362,7 @@ class CameraStreamHandler:
         logMessage(f"Backchannel thread started.")
 
     def setWs(self, ws: EufySecurityWebSocket):
+        """Set the websocket for the camera handler."""
         self.ws = ws
 
     # async def _start_stream_async(self, websocket):
@@ -381,11 +392,13 @@ class CameraStreamHandler:
 
 # On Open Callback
 async def on_open():
+    """Callback when the websocket is opened."""
     logMessage(f" on_open - executed")
 
 
 # On Close Callback
 async def on_close():
+    """Callback when the websocket is closed."""
     logMessage(f" on_close - executed")
 
 
@@ -397,11 +410,13 @@ async def on_close():
 
 # On Error Callback
 async def on_error(message):
+    """Callback when an error occurs."""
     logMessage(f" on_error - executed - {message}")
 
 
 # On Message Callback
 async def on_message(message):
+    """Callback when a message is received."""
     payload = message.json()
     message_type: str = payload["type"]
     if message_type == "result":
@@ -501,6 +516,7 @@ async def on_message(message):
 
 
 async def init_websocket(ws_security_port):
+    """Initialize the websocket."""
     websocket = EufySecurityWebSocket(
         "402f1039-eufy-security-ws",
         ws_security_port,
@@ -528,6 +544,7 @@ async def init_websocket(ws_security_port):
 
 
 if __name__ == "__main__":
+    """Main entry point."""
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
         description="Stream video and audio from multiple Eufy cameras."
