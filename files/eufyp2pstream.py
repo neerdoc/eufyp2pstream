@@ -520,6 +520,7 @@ async def on_message(message):
             #     await self.ws.send_message(json.dumps(msg))
         else:
             logMessage(f"Unknown event type: {message['event']}")
+            logMessage(f"{message}")
     else:
         logMessage(f"Unknown message type: {message_type}")
     logMessage(f"on_message done")
