@@ -548,11 +548,13 @@ if __name__ == "__main__":
     BASE_PORT = 63336
     # Create one Camera Stream Handler per camera.
     for i, serial in enumerate(args.camera_serials):
+        print("Creating CameraStreamHandler for camera: ", serial)
         if serial != "null":
             handler = CameraStreamHandler(serial, BASE_PORT + i * 3, run_event)
             # handler.setup_sockets()
             camera_handlers[serial] = handler
 
+    print("Starting websocket.")
     # Loop forever.
     loop = asyncio.get_event_loop()
     loop.run_until_complete(init_websocket(args.ws_security_port))
