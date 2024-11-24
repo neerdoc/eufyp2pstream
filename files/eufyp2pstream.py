@@ -113,6 +113,7 @@ class ClientAcceptThread(threading.Thread):
         self.my_threads = []
 
     def update_threads(self):
+        print("Updating ", self.name, " threads for ", self.serialno)
         my_threads_before = len(self.my_threads)
         for thread in self.my_threads:
             if not thread.is_alive():
@@ -129,15 +130,18 @@ class ClientAcceptThread(threading.Thread):
                 msg = STOP_P2P_LIVESTREAM_MESSAGE.copy()
                 msg["serialNumber"] = self.serialno
                 asyncio.run(self.ws.send_message(json.dumps(msg)))
+        print("Done updating ", self.name, " threads for ", self.serialno)
 
     def run(self):
-        print("Accepting connection for ", self.name)
+        print("Accepting ", self.name, " connection for ", self.serialno)
         msg = STOP_TALKBACK.copy()
         msg["serialNumber"] = self.serialno
         asyncio.run(self.ws.send_message(json.dumps(msg)))
         print("stop talkback sent for ", self.serialno)
         while not self.run_event.is_set():
+            print("Updaing threads for ", self.name)
             self.update_threads()
+            print("Waiting for connection for ", self.name)
             sys.stdout.flush()
             try:
                 client_sock, client_addr = self.socket.accept()
@@ -164,8 +168,9 @@ class ClientAcceptThread(threading.Thread):
                     self.my_threads.append(thread)
                     thread.start()
             except socket.timeout:
+                print("socket timeout for ", self.serialno)
                 pass
-        print("ClientAcceptThread ended for ", self.serialno)
+        print("ClientAcceptThread ", self.name, " ended for ", self.serialno)
 
 
 class ClientSendThread(threading.Thread):
