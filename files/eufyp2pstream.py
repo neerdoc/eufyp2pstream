@@ -419,7 +419,9 @@ async def on_message(message):
     """Callback when a message is received."""
     payload = message.json()
     message_type: str = payload["type"]
+    logMessage(f"on_message - {message_type}")
     if message_type == "result":
+        logMessage(f"message is of type result")
         message_id = payload["messageId"]
         if message_id != SEND_TALKBACK_AUDIO_DATA["messageId"]:
             # Avoid spamming of TALKBACK_AUDIO_DATA logs
@@ -456,7 +458,8 @@ async def on_message(message):
             # msg["serialNumber"] = self.serialno
             # await self.ws.send_message(json.dumps(msg))
 
-    if message_type == "event":
+    elif message_type == "event":
+        logMessage(f"message is of type event")
         message = payload[message_type]
         event_type = message["event"]
 
@@ -512,6 +515,8 @@ async def on_message(message):
             #     msg = START_P2P_LIVESTREAM_MESSAGE.copy()
             #     msg["serialNumber"] = self.serialno
             #     await self.ws.send_message(json.dumps(msg))
+    else:
+        logMessage(f"Unknown message type: {message_type}")
     logMessage(f"on_message done")
 
 
