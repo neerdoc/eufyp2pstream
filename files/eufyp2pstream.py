@@ -420,11 +420,12 @@ async def on_message(message):
             # START_TALKBACK message again for all cameras. 2) Somehow determine which
             # camera caused the error and send the START_TALKBACK message for that camera.
             # Don't know if 2) is possible.
-            error_code = payload["errorCode"]
-            if error_code == "device_talkback_not_running":
-                for handler in camera_handlers.values():
-                    handler.start_talkback()
-
+            # 1) is not ideal. It seems to break streaming completely.
+            # error_code = payload["errorCode"]
+            # if error_code == "device_talkback_not_running":
+            #     for handler in camera_handlers.values():
+            #         handler.start_talkback()
+            pass
     elif message_type == "event":
         message = payload[message_type]
         event_type = message["event"]
