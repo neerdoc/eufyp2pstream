@@ -509,7 +509,7 @@ if __name__ == "__main__":
         "--camera_serials",
         nargs="+",
         required=True,
-        help="List of camera serial numbers (e.g., --serials CAM1_SERIAL CAM2_SERIAL).",
+        help="List of camera serial numbers (e.g., --camera_serials CAM1_SERIAL CAM2_SERIAL).",
     )
     parser.add_argument(
         "--ws_security_port",
@@ -519,6 +519,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     debug = args.debug
+    print(f"Debug: {debug}")
     logMessage(f"WS Security Port: {args.ws_security_port}")
 
     # Define constants.
