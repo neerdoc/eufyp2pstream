@@ -410,7 +410,7 @@ async def on_message(message):
         ):
             error_code = payload["errorCode"]
             logMessage(f"Talkback error: {error_code}")
-            logMessage(f"{payload}", True)
+            logMessage(f"{message}", True)
             # TODO: Handle error codes with muliple cameras.
             # if error_code == "device_talkback_not_running":
             # msg = START_TALKBACK.copy()
@@ -443,7 +443,7 @@ async def on_message(message):
                             queue.get(False)
                         queue.put(event_value)
         elif message["event"] == "livestream error":
-            logMessage(f"Livestream Error! - {payload}")
+            logMessage(f"Livestream Error! - {message}")
             # TODO: Handle error codes with muliple cameras.
             # if self.ws and len(self.video_thread.queues) > 0:
             #     msg = START_P2P_LIVESTREAM_MESSAGE.copy()
