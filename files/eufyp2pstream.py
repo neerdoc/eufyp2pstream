@@ -140,6 +140,7 @@ class ClientAcceptThread(threading.Thread):
         logMessage(f"stop talkback sent for {self.serialno}")
         while not self.run_event.is_set():
             self.update_threads()
+            sys.stdout.flush()
             try:
                 client_sock, client_addr = self.socket.accept()
                 if self.name == "BackChannel":
@@ -347,17 +348,17 @@ class CameraStreamHandler:
         try:
             self.video_sock.shutdown(socket.SHUT_RDWR)
         except OSError:
-            print("Error shutdown socket")
+            logMessage("Error shutdown socket", True)
         self.video_sock.close()
         try:
             self.audio_sock.shutdown(socket.SHUT_RDWR)
         except OSError:
-            print("Error shutdown socket")
+            logMessage("Error shutdown socket", True)
         self.audio_sock.close()
         try:
             self.backchannel_sock.shutdown(socket.SHUT_RDWR)
         except OSError:
-            print("Error shutdown socket")
+            logMessage("Error shutdown socket", True)
         self.backchannel_sock.close()
 
     def start_talkback(self):
@@ -392,6 +393,7 @@ async def on_message(message):
     """Callback when a message is received."""
     payload = message.json()
     message_type: str = payload["type"]
+    sys.stdout.flush()
     if message_type == "result":
         message_id = payload["messageId"]
         if message_id != SEND_TALKBACK_AUDIO_DATA["messageId"]:
@@ -429,6 +431,7 @@ async def on_message(message):
     elif message_type == "event":
         message = payload[message_type]
         event_type = message["event"]
+        sys.stdout.flush()
         if message["event"] == "livestream audio data":
             event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
             event_data_type = EVENT_CONFIGURATION[event_type]["type"]
