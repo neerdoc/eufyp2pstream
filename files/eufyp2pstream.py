@@ -103,6 +103,7 @@ def logMessage(message, force=False):
 
 class ClientAcceptThread(threading.Thread):
     """Thread to accept incoming connections from clients."""
+
     def __init__(self, socket, run_event, name, ws, serialno):
         """Initialize the thread."""
         threading.Thread.__init__(self)
@@ -166,6 +167,7 @@ class ClientAcceptThread(threading.Thread):
 
 class ClientSendThread(threading.Thread):
     """Thread to send data to clients."""
+
     def __init__(self, client_sock, run_event, name, ws, serialno):
         """Initialize the thread."""
         threading.Thread.__init__(self)
@@ -210,6 +212,7 @@ class ClientSendThread(threading.Thread):
 
 class ClientRecvThread(threading.Thread):
     """Thread to receive data from clients."""
+
     def __init__(self, client_sock, run_event, name, ws, serialno):
         """Initialize the thread."""
         threading.Thread.__init__(self)
@@ -282,8 +285,10 @@ class ClientRecvThread(threading.Thread):
         asyncio.run(self.ws.send_message(json.dumps(msg)))
         logMessage(f"Thread {self.name} stopping for {self.serialno}")
 
+
 class CameraStreamHandler:
     """Handler for camera streams."""
+
     def __init__(self, serial_number, start_port, run_event):
         """Initialize the handler."""
         logMessage(
@@ -396,7 +401,8 @@ async def on_message(message):
                     logMessage(f"Started stream for camera {serialno}.", True)
                 else:
                     logMessage(
-                        f"Found unknown Eufy camera with serial number {serialno}.", True
+                        f"Found unknown Eufy camera with serial number {serialno}.",
+                        True,
                     )
         elif (
             message_id == TALKBACK_RESULT_MESSAGE["messageId"]
