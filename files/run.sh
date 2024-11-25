@@ -21,13 +21,13 @@ CAM12_SN=$(jq --raw-output ".camera_12_serial_number" $CONFIG_PATH)
 CAM13_SN=$(jq --raw-output ".camera_13_serial_number" $CONFIG_PATH)
 CAM14_SN=$(jq --raw-output ".camera_14_serial_number" $CONFIG_PATH)
 CAM15_SN=$(jq --raw-output ".camera_15_serial_number" $CONFIG_PATH)
-DEBUG=$(jq --raw-output ".debug_log" $CONFIG_PATH)
-if [ "$DEBUG" == "true" ]; then
-    DEBUG="--debug"
+DEBUG_LOG=$(jq --raw-output ".debug_log" $CONFIG_PATH)
+if [ "$DEBUG_LOG" == "true" ]; then
+    DEBUG_LOG="--debug"
 else
-    DEBUG=""
+    DEBUG_LOG=""
 fi
 
 echo "Starting EufyP2PStream. eufy_security_ws_port is $EUFY_WS_PORT"
-python3 -u /eufyp2pstream.py $DEBUG --ws_security_port $EUFY_WS_PORT --camera_serials $CAM1_SN $CAM2_SN $CAM3_SN $CAM4_SN $CAM5_SN $CAM6_SN $CAM7_SN $CAM8_SN $CAM9_SN $CAM10_SN $CAM11_SN $CAM12_SN $CAM13_SN $CAM14_SN $CAM15_SN
+python3 -u /eufyp2pstream.py $DEBUG_LOG --ws_security_port $EUFY_WS_PORT --camera_serials $CAM1_SN $CAM2_SN $CAM3_SN $CAM4_SN $CAM5_SN $CAM6_SN $CAM7_SN $CAM8_SN $CAM9_SN $CAM10_SN $CAM11_SN $CAM12_SN $CAM13_SN $CAM14_SN $CAM15_SN
 echo "Exited with code $?"
