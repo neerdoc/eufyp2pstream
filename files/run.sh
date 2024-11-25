@@ -1,4 +1,6 @@
 #!/bin/bash
+export PYTHONUNBUFFERED=1
+export FORCE_UNBUFFERED=1
 set -x
 set +u
 CONFIG_PATH=/data/options.json
