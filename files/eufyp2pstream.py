@@ -360,6 +360,13 @@ class CameraStreamHandler:
             print("Error shutdown socket")
         self.backchannel_sock.close()
 
+    def start_talkback(self):
+        """Start the talkback."""
+        logMessage(f"Starting talkback for camera {self.serial_number}.")
+        msg = START_TALKBACK.copy()
+        msg["serialNumber"] = self.serial_number
+        asyncio.run(self.ws.send_message(json.dumps(msg)))
+
 
 async def on_open():
     """Callback when the websocket is opened."""
@@ -408,14 +415,15 @@ async def on_message(message):
             message_id == TALKBACK_RESULT_MESSAGE["messageId"]
             and "errorCode" in payload
         ):
+            # TODO: Handle error codes with muliple cameras. This one is tricky since
+            # the error code is not specific to a camera. Alternatives: 1) Send the
+            # START_TALKBACK message again for all cameras. 2) Somehow determine which
+            # camera caused the error and send the START_TALKBACK message for that camera.
+            # Don't know if 2) is possible.
             error_code = payload["errorCode"]
-            logMessage(f"Talkback error: {error_code}")
-            logMessage(f"{message}", True)
-            # TODO: Handle error codes with muliple cameras.
-            # if error_code == "device_talkback_not_running":
-            # msg = START_TALKBACK.copy()
-            # msg["serialNumber"] = self.serialno
-            # await self.ws.send_message(json.dumps(msg))
+            if error_code == "device_talkback_not_running":
+                for handler in camera_handlers.values():
+                    handler.start_talkback()
 
     elif message_type == "event":
         message = payload[message_type]
