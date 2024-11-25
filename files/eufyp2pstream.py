@@ -519,6 +519,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     debug = args.debug
+    print(f"Debug: {debug}")
+    sys.stdout.flush()
     logMessage(f"WS Security Port: {args.ws_security_port}")
 
     # Define constants.
