@@ -1,6 +1,5 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bashio
 export PYTHONUNBUFFERED=1
-export FORCE_UNBUFFERED=1
 set +u
 CONFIG_PATH=/data/options.json
 
