@@ -16,6 +16,7 @@ import json
 # Variables
 camera_handlers = {}
 run_event = threading.Event()
+debug = False
 
 # Constants
 RECV_CHUNK_SIZE = 4096
@@ -93,14 +94,16 @@ def exit_handler(signum, frame):
 signal.signal(signal.SIGINT, exit_handler)
 
 
-def logMessage(message):
+def logMessage(message, force=False):
     """Log a message to the console."""
-    print(message)
-    sys.stdout.flush()
+    if debug or force:
+        print(message)
+        sys.stdout.flush()
 
 
 class ClientAcceptThread(threading.Thread):
     """Thread to accept incoming connections from clients."""
+
     def __init__(self, socket, run_event, name, ws, serialno):
         """Initialize the thread."""
         threading.Thread.__init__(self)
@@ -114,7 +117,6 @@ class ClientAcceptThread(threading.Thread):
 
     def update_threads(self):
         """Update the list of active threads."""
-#        logMessage(f"Updating {self.name} threads for {self.serialno}")
         my_threads_before = len(self.my_threads)
         for thread in self.my_threads:
             if not thread.is_alive():
@@ -128,7 +130,6 @@ class ClientAcceptThread(threading.Thread):
                 msg = STOP_P2P_LIVESTREAM_MESSAGE.copy()
                 msg["serialNumber"] = self.serialno
                 asyncio.run(self.ws.send_message(json.dumps(msg)))
-#        logMessage(f"Done updating {self.name} threads for {self.serialno}")
 
     def run(self):
         """Run the thread to accept incoming connections."""
@@ -138,18 +139,11 @@ class ClientAcceptThread(threading.Thread):
         asyncio.run(self.ws.send_message(json.dumps(msg)))
         logMessage(f"stop talkback sent for {self.serialno}")
         while not self.run_event.is_set():
-#            logMessage(f"Updating threads for {self.name}")
             self.update_threads()
-#            logMessage(f"Waiting for {self.name} connection for {self.serialno}")
-
-#            logMessage(f"Flush done for {self.serialno}")
             try:
                 client_sock, client_addr = self.socket.accept()
-#                logMessage(f"New connection added: {client_addr} for {self.name}")
-
                 if self.name == "BackChannel":
                     client_sock.setblocking(True)
-#                    logMessage(f"Starting BackChannel")
                     thread = ClientRecvThread(
                         client_sock, run_event, self.name, self.ws, self.serialno
                     )
@@ -173,6 +167,7 @@ class ClientAcceptThread(threading.Thread):
 
 class ClientSendThread(threading.Thread):
     """Thread to send data to clients."""
+
     def __init__(self, client_sock, run_event, name, ws, serialno):
         """Initialize the thread."""
         threading.Thread.__init__(self)
@@ -186,7 +181,6 @@ class ClientSendThread(threading.Thread):
     def run(self):
         """Run the thread to send data to clients."""
         logMessage(f"Thread {self.name} running for {self.serialno}")
-
         try:
             while not self.run_event.is_set():
                 ready_to_read, ready_to_write, in_error = select.select(
@@ -218,6 +212,7 @@ class ClientSendThread(threading.Thread):
 
 class ClientRecvThread(threading.Thread):
     """Thread to receive data from clients."""
+
     def __init__(self, client_sock, run_event, name, ws, serialno):
         """Initialize the thread."""
         threading.Thread.__init__(self)
@@ -265,7 +260,6 @@ class ClientRecvThread(threading.Thread):
                         no_data += 1
                     if no_data >= 15:
                         logMessage(f"15x in a row no data in socket {self.name}")
-
                         break
                 except BlockingIOError:
                     # Resource temporarily unavailable (errno EWOULDBLOCK)
@@ -289,11 +283,12 @@ class ClientRecvThread(threading.Thread):
         msg = STOP_TALKBACK.copy()
         msg["serialNumber"] = self.serialno
         asyncio.run(self.ws.send_message(json.dumps(msg)))
+        logMessage(f"Thread {self.name} stopping for {self.serialno}")
 
 
-# Camera Stream Handler
 class CameraStreamHandler:
     """Handler for camera streams."""
+
     def __init__(self, serial_number, start_port, run_event):
         """Initialize the handler."""
         logMessage(
@@ -306,18 +301,6 @@ class CameraStreamHandler:
         self.video_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.audio_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.backchannel_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.start_livestream_msg = {
-        #     "messageId": "start_livestream",
-        #     "command": "device.start_livestream",
-        #     "serialNumber": self.serial_number,
-        # }
-        # self.stop_livestream_msg = {
-        #     "messageId": "stop_livestream",
-        #     "command": "device.stop_livestream",
-        #     "serialNumber": self.serial_number,
-        # }
-
-        # def setup_sockets(self):
         self.video_sock.bind(("0.0.0.0", self.start_port))
         self.video_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.video_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -341,11 +324,9 @@ class CameraStreamHandler:
         self.video_thread = ClientAcceptThread(
             self.video_sock, self.run_event, "Video", self.ws, self.serial_number
         )
-        logMessage(f"Video thread setup.")
         self.audio_thread = ClientAcceptThread(
             self.audio_sock, self.run_event, "Audio", self.ws, self.serial_number
         )
-        logMessage(f"Audio thread setup.")
         self.backchannel_thread = ClientAcceptThread(
             self.backchannel_sock,
             self.run_event,
@@ -353,127 +334,96 @@ class CameraStreamHandler:
             self.ws,
             self.serial_number,
         )
-        logMessage(f"Backchannel thread setup.")
         self.audio_thread.start()
-        logMessage(f"Audio thread started.")
         self.video_thread.start()
-        logMessage(f"Video thread started.")
         self.backchannel_thread.start()
-        logMessage(f"Backchannel thread started.")
 
     def setWs(self, ws: EufySecurityWebSocket):
         """Set the websocket for the camera handler."""
         self.ws = ws
 
-    # async def _start_stream_async(self, websocket):
-    #     await websocket.send(json.dumps(self.start_livestream_msg))
-    #     video_conn, _ = self.video_sock.accept()
-    #     audio_conn, _ = self.audio_sock.accept()
-    #     backchannel_conn, _ = self.backchannel_sock.accept()
-
-    #     while True:
-    #         video_data = await websocket.recv()
-    #         audio_data = await websocket.recv()
-    #         video_conn.sendall(video_data)
-    #         audio_conn.sendall(audio_data)
-    #         backchannel_conn.sendall(
-    #             b""
-    #         )  # Send empty data to keep the backchannel alive
-
-    # def stop_stream(self, websocket):
-    #     asyncio.run(self._stop_stream_async(websocket))
-
-    # async def _stop_stream_async(self, websocket):
-    #     await websocket.send(json.dumps(self.stop_livestream_msg))
-    #     self.video_sock.close()
-    #     self.audio_sock.close()
-    #     self.backchannel_sock.close()
+    def stop(self):
+        """Stop the stream."""
+        try:
+            self.video_sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            print("Error shutdown socket")
+        self.video_sock.close()
+        try:
+            self.audio_sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            print("Error shutdown socket")
+        self.audio_sock.close()
+        try:
+            self.backchannel_sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            print("Error shutdown socket")
+        self.backchannel_sock.close()
 
 
-# On Open Callback
 async def on_open():
     """Callback when the websocket is opened."""
     logMessage(f" on_open - executed")
 
 
-# On Close Callback
 async def on_close():
     """Callback when the websocket is closed."""
     logMessage(f" on_close - executed")
+    run_event.set()
+    # Close all camera handlers.
+    for handler in camera_handlers.values():
+        handler.stop()
+    os._exit(-1)
 
 
-#    self.run_event.set()
-#    self.ws = None
-#    stop()
-#    os._exit(-1)
-
-
-# On Error Callback
 async def on_error(message):
     """Callback when an error occurs."""
     logMessage(f" on_error - executed - {message}")
 
 
-# On Message Callback
 async def on_message(message):
     """Callback when a message is received."""
     payload = message.json()
     message_type: str = payload["type"]
-    logMessage(f"on_message - {message_type}")
     if message_type == "result":
-        logMessage(f"message is of type result")
         message_id = payload["messageId"]
         if message_id != SEND_TALKBACK_AUDIO_DATA["messageId"]:
             # Avoid spamming of TALKBACK_AUDIO_DATA logs
             logMessage(f"on_message result: {payload}")
 
         if message_id == START_LISTENING_MESSAGE["messageId"]:
-            # logMessage(f"Listening started: {payload}")
             message_result = payload[message_type]
             states = message_result["state"]
             for state in states["devices"]:
                 serialno = state["serialNumber"]
                 if serialno in camera_handlers:
                     camera_handlers[serialno].start_stream()
-                    logMessage(f"Started stream for camera {serialno}.")
+                    logMessage(f"Started stream for camera {serialno}.", True)
                 else:
                     logMessage(
-                        f"Found unknown Eufy camera with serial number {serialno}."
+                        f"Found unknown Eufy camera with serial number {serialno}.",
+                        True,
                     )
-
-            # self.video_thread = ClientAcceptThread(video_sock, run_event, "Video", self.ws, self.serialno)
-            # self.audio_thread = ClientAcceptThread(audio_sock, run_event, "Audio", self.ws, self.serialno)
-            # self.backchannel_thread = ClientAcceptThread(backchannel_sock, run_event, "BackChannel", self.ws, self.serialno)
-            # self.audio_thread.start()
-            # self.video_thread.start()
-            # self.backchannel_thread.start()
-        if (
+        elif (
             message_id == TALKBACK_RESULT_MESSAGE["messageId"]
             and "errorCode" in payload
         ):
             error_code = payload["errorCode"]
             logMessage(f"Talkback error: {error_code}")
+            logMessage(f"{payload}", True)
+            # TODO: Handle error codes with muliple cameras.
             # if error_code == "device_talkback_not_running":
             # msg = START_TALKBACK.copy()
             # msg["serialNumber"] = self.serialno
             # await self.ws.send_message(json.dumps(msg))
 
     elif message_type == "event":
-        logMessage(f"message is of type event")
         message = payload[message_type]
         event_type = message["event"]
-        logMessage(f"event_type: {event_type}")
         if message["event"] == "livestream audio data":
-            logMessage(f"on_audio")
             event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
-            logMessage(f"event_value: {event_value}")
             event_data_type = EVENT_CONFIGURATION[event_type]["type"]
-            logMessage(f"event_data_type: {event_data_type}")
             if event_data_type == "event":
-                logMessage(
-                    f"##################################################################"
-                )
-                logMessage(f"on_audio - {message['serialNumber']}")
                 serialno = message["serialNumber"]
                 if serialno in camera_handlers:
                     for queue in camera_handlers[serialno].audio_thread.queues:
@@ -481,22 +431,10 @@ async def on_message(message):
                             logMessage(f"Audio queue full.")
                             queue.get(False)
                         queue.put(event_value)
-            #     for queue in self.audio_thread.queues:
-            #         if queue.full():
-            #             logMessage(f"Audio queue full.")
-            #             queue.get(False)
-            #         queue.put(event_value)
         elif message["event"] == "livestream video data":
-            logMessage(f"on_video")
             event_value = message[EVENT_CONFIGURATION[event_type]["value"]]
-            logMessage(f"event_value: {event_value}")
             event_data_type = EVENT_CONFIGURATION[event_type]["type"]
-            logMessage(f"event_data_type: {event_data_type}")
             if event_data_type == "event":
-                logMessage(
-                    f"##################################################################"
-                )
-                logMessage(f"on_video - {message['serialNumber']}")
                 serialno = message["serialNumber"]
                 if serialno in camera_handlers:
                     for queue in camera_handlers[serialno].video_thread.queues:
@@ -504,16 +442,9 @@ async def on_message(message):
                             logMessage(f"Video queue full.")
                             queue.get(False)
                         queue.put(event_value)
-                # for queue in self.video_thread.queues:
-            #         if queue.full():
-            #             logMessage(f"Video queue full.")
-            #             queue.get(False)
-            #         queue.put(event_value)
         elif message["event"] == "livestream error":
-            logMessage(
-                f"##################################################################"
-            )
             logMessage(f"Livestream Error! - {payload}")
+            # TODO: Handle error codes with muliple cameras.
             # if self.ws and len(self.video_thread.queues) > 0:
             #     msg = START_P2P_LIVESTREAM_MESSAGE.copy()
             #     msg["serialNumber"] = self.serialno
@@ -523,7 +454,7 @@ async def on_message(message):
             logMessage(f"{message}")
     else:
         logMessage(f"Unknown message type: {message_type}")
-    logMessage(f"on_message done")
+        logMessage(f"{message}")
 
 
 async def init_websocket(ws_security_port):
@@ -561,6 +492,11 @@ if __name__ == "__main__":
         description="Stream video and audio from multiple Eufy cameras."
     )
     parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode (default: disabled).",
+    )
+    parser.add_argument(
         "--camera_serials",
         nargs="+",
         required=True,
@@ -573,15 +509,15 @@ if __name__ == "__main__":
         help="Base port number for streaming (default: 3000).",
     )
     args = parser.parse_args()
+    debug = args.debug
     logMessage(f"WS Security Port: {args.ws_security_port}")
-    logMessage(f"Camera Serial Numbers: {args.camera_serials}")
 
     # Define constants.
     BASE_PORT = 63336
     # Create one Camera Stream Handler per camera.
     for i, serial in enumerate(args.camera_serials):
-        logMessage(f"Creating CameraStreamHandler for camera: {serial}")
         if serial != "null":
+            logMessage(f"Creating CameraStreamHandler for camera: {serial}")
             handler = CameraStreamHandler(serial, BASE_PORT + i * 3, run_event)
             # handler.setup_sockets()
             camera_handlers[serial] = handler
