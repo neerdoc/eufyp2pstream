@@ -1,11 +1,11 @@
 # https://github.com/AlexxIT/builder/blob/master/builder.sh
 name: eufyp2pstream
 description: Eufy P2P camera streaming application
-#url: http://192.168.178.252:8123/local_eufyp2pstream
+url: http://192.168.178.252:8123/local_eufyp2pstream
 arch: [amd64, aarch64, i386, armv7]
 
 # https://developers.home-assistant.io/docs/add-ons/configuration
-version: 0.2.38-beta
+version: 0.3.0-beta
 slug: eufyp2pstream
 init: false
 startup: application
